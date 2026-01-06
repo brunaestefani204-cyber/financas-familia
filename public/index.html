@@ -21,6 +21,7 @@ button.delete{background:#dc2626;margin-top:10px}
 .progress{background:#e5e7eb;border-radius:8px;height:10px;overflow:hidden;margin-top:6px}
 .progress div{background:#22c55e;height:100%}
 ul{padding-left:18px}
+.small{font-size:13px;color:#6b7280}
 </style>
 </head>
 
@@ -55,14 +56,23 @@ ul{padding-left:18px}
 <section id="transacoes">
 <div class="box">
 <h3>Nova Transação</h3>
+
 <select id="tipo">
 <option value="entrada">Entrada</option>
 <option value="despesa">Despesa</option>
 <option value="investimento">Investimento</option>
 </select>
+
 <input id="valor" type="number" placeholder="Valor">
+
 <select id="categoria"></select>
+
 <button onclick="addTransacao()">Adicionar</button>
+</div>
+
+<div class="box">
+<h3>Lançamentos</h3>
+<ul id="listaTransacoes"></ul>
 </div>
 </section>
 
@@ -81,8 +91,17 @@ ul{padding-left:18px}
 <section id="categorias">
 <div class="box">
 <h3>🏷 Categorias</h3>
+
 <input id="novaCategoria" placeholder="Nome da categoria">
+
+<select id="classificacaoCategoria">
+<option value="Adulto">Adulto</option>
+<option value="Criança">Criança</option>
+<option value="Família">Família</option>
+</select>
+
 <button onclick="addCategoria()">Adicionar Categoria</button>
+
 <ul id="listaCategorias"></ul>
 </div>
 </section>
@@ -92,11 +111,10 @@ ul{padding-left:18px}
 <script>
 /* DADOS */
 let categorias = JSON.parse(localStorage.getItem("categorias")) || [
-  {nome:"Alimentação"},
-  {nome:"Moradia"},
-  {nome:"Transporte"},
-  {nome:"Educação"},
-  {nome:"Lazer"}
+  {nome:"Alimentação",classificacao:"Família"},
+  {nome:"Moradia",classificacao:"Família"},
+  {nome:"Educação",classificacao:"Criança"},
+  {nome:"Lazer",classificacao:"Família"}
 ]
 
 let transacoes = JSON.parse(localStorage.getItem("transacoes")) || []
@@ -119,14 +137,19 @@ localStorage.setItem("metas",JSON.stringify(metas))
 
 /* CATEGORIAS */
 function renderCategorias(){
-categoria.innerHTML = categorias.map(c=>`<option>${c.nome}</option>`).join("")
-listaCategorias.innerHTML = categorias.map(c=>`<li>${c.nome}</li>`).join("")
+categoria.innerHTML = categorias.map(c=>`<option value="${c.nome}">${c.nome}</option>`).join("")
+listaCategorias.innerHTML = categorias.map(c=>`
+<li>
+<strong>${c.nome}</strong>
+<div class="small">${c.classificacao}</div>
+</li>`).join("")
 }
 
 function addCategoria(){
 let nome=novaCategoria.value.trim()
+let clas=classificacaoCategoria.value
 if(!nome)return
-categorias.push({nome})
+categorias.push({nome,classificacao:clas})
 novaCategoria.value=""
 salvar();renderCategorias()
 }
@@ -135,9 +158,29 @@ salvar();renderCategorias()
 function addTransacao(){
 let v=Number(valor.value)
 if(!v)return
-transacoes.push({tipo:tipo.value,valor:v,categoria:categoria.value})
+
+let cat = categorias.find(c=>c.nome===categoria.value)
+
+transacoes.push({
+  tipo:tipo.value,
+  valor:v,
+  categoria:cat.nome,
+  classificacao:cat.classificacao
+})
+
 valor.value=""
-salvar();atualizar()
+salvar();renderTransacoes();atualizar()
+}
+
+function renderTransacoes(){
+listaTransacoes.innerHTML=""
+transacoes.forEach(t=>{
+listaTransacoes.innerHTML+=`
+<li>
+<strong>${t.tipo.toUpperCase()}</strong> • ${t.categoria}
+<div class="small">${t.classificacao} • R$ ${t.valor.toFixed(2)}</div>
+</li>`
+})
 }
 
 /* METAS */
@@ -179,7 +222,7 @@ saldo.innerText=(sobra>0?0:sobra).toLocaleString("pt-BR",{style:"currency",curre
 salvar();renderMetas()
 }
 
-/* RENDER METAS */
+/* METAS UI */
 function renderMetas(){
 listaMetas.innerHTML=""
 metas.forEach((m,i)=>{
@@ -196,6 +239,7 @@ listaMetas.innerHTML+=`
 
 /* INIT */
 renderCategorias()
+renderTransacoes()
 renderMetas()
 atualizar()
 </script>
