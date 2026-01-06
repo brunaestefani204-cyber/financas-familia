@@ -33,4 +33,172 @@ ul{padding-left:18px}
 
 <nav>
 <button class="active" onclick="trocarAba('painel',this)">Painel</button>
-<button onclick="trocarAba(
+<button onclick="trocarAba('transacoes',this)">Transações</button>
+<button onclick="trocarAba('metas',this)">Metas</button>
+<button onclick="trocarAba('categorias',this)">Categorias</button>
+</nav>
+
+<main>
+
+<!-- PAINEL -->
+<section id="painel" class="active">
+<div class="cards">
+<div class="card"><strong>Entradas</strong><div id="entradas">R$ 0,00</div></div>
+<div class="card"><strong>Despesas</strong><div id="despesas">R$ 0,00</div></div>
+<div class="card"><strong>Investimentos</strong><div id="investimentos">R$ 0,00</div></div>
+<div class="card"><strong>Metas (Ano)</strong><div id="totalMetas">R$ 0,00</div></div>
+<div class="card"><strong>Saldo do mês</strong><div id="saldo">R$ 0,00</div></div>
+</div>
+</section>
+
+<!-- TRANSAÇÕES -->
+<section id="transacoes">
+<div class="box">
+<h3>Nova Transação</h3>
+<select id="tipo">
+<option value="entrada">Entrada</option>
+<option value="despesa">Despesa</option>
+<option value="investimento">Investimento</option>
+</select>
+<input id="valor" type="number" placeholder="Valor">
+<select id="categoria"></select>
+<button onclick="addTransacao()">Adicionar</button>
+</div>
+</section>
+
+<!-- METAS -->
+<section id="metas">
+<div class="box">
+<h3>🎯 Nova Meta Anual</h3>
+<input id="nomeMeta" placeholder="Nome da meta">
+<input id="valorMeta" type="number" placeholder="Valor total">
+<button onclick="addMeta()">Adicionar Meta</button>
+</div>
+<div id="listaMetas"></div>
+</section>
+
+<!-- CATEGORIAS -->
+<section id="categorias">
+<div class="box">
+<h3>🏷 Categorias</h3>
+<input id="novaCategoria" placeholder="Nome da categoria">
+<button onclick="addCategoria()">Adicionar Categoria</button>
+<ul id="listaCategorias"></ul>
+</div>
+</section>
+
+</main>
+
+<script>
+/* DADOS */
+let categorias = JSON.parse(localStorage.getItem("categorias")) || [
+  {nome:"Alimentação"},
+  {nome:"Moradia"},
+  {nome:"Transporte"},
+  {nome:"Educação"},
+  {nome:"Lazer"}
+]
+
+let transacoes = JSON.parse(localStorage.getItem("transacoes")) || []
+let metas = JSON.parse(localStorage.getItem("metas")) || []
+
+/* ABA */
+function trocarAba(id,btn){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
+document.getElementById(id).classList.add("active")
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"))
+btn.classList.add("active")
+}
+
+/* SALVAR */
+function salvar(){
+localStorage.setItem("categorias",JSON.stringify(categorias))
+localStorage.setItem("transacoes",JSON.stringify(transacoes))
+localStorage.setItem("metas",JSON.stringify(metas))
+}
+
+/* CATEGORIAS */
+function renderCategorias(){
+categoria.innerHTML = categorias.map(c=>`<option>${c.nome}</option>`).join("")
+listaCategorias.innerHTML = categorias.map(c=>`<li>${c.nome}</li>`).join("")
+}
+
+function addCategoria(){
+let nome=novaCategoria.value.trim()
+if(!nome)return
+categorias.push({nome})
+novaCategoria.value=""
+salvar();renderCategorias()
+}
+
+/* TRANSAÇÕES */
+function addTransacao(){
+let v=Number(valor.value)
+if(!v)return
+transacoes.push({tipo:tipo.value,valor:v,categoria:categoria.value})
+valor.value=""
+salvar();atualizar()
+}
+
+/* METAS */
+function addMeta(){
+let n=nomeMeta.value.trim()
+let t=Number(valorMeta.value)
+if(!n||!t)return
+metas.push({nome:n,total:t,acumulado:0})
+nomeMeta.value="";valorMeta.value=""
+salvar();renderMetas()
+}
+
+function excluirMeta(i){
+metas.splice(i,1)
+salvar();renderMetas();atualizar()
+}
+
+/* ATUALIZAR PAINEL */
+function atualizar(){
+let e=transacoes.filter(t=>t.tipo==="entrada").reduce((a,b)=>a+b.valor,0)
+let d=transacoes.filter(t=>t.tipo==="despesa").reduce((a,b)=>a+b.valor,0)
+let i=transacoes.filter(t=>t.tipo==="investimento").reduce((a,b)=>a+b.valor,0)
+let sobra=e-d-i
+
+if(sobra>0 && metas.length){
+let m=metas.find(m=>m.acumulado<m.total)
+if(m){
+let falta=m.total-m.acumulado
+m.acumulado+=Math.min(falta,sobra)
+}
+}
+
+entradas.innerText=e.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+despesas.innerText=d.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+investimentos.innerText=i.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+totalMetas.innerText=metas.reduce((a,b)=>a+b.acumulado,0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+saldo.innerText=(sobra>0?0:sobra).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+
+salvar();renderMetas()
+}
+
+/* RENDER METAS */
+function renderMetas(){
+listaMetas.innerHTML=""
+metas.forEach((m,i)=>{
+let p=(m.acumulado/m.total)*100
+listaMetas.innerHTML+=`
+<div class="box">
+<strong>${m.nome}</strong>
+<p>${m.acumulado.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} / ${m.total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</p>
+<div class="progress"><div style="width:${p}%"></div></div>
+<button class="delete" onclick="excluirMeta(${i})">Excluir Meta</button>
+</div>`
+})
+}
+
+/* INIT */
+renderCategorias()
+renderMetas()
+atualizar()
+</script>
+
+</body>
+</html>
