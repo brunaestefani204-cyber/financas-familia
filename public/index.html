@@ -6,52 +6,137 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f2f4f7;
       margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      background: #1f2937;
+      color: #fff;
       padding: 20px;
+      text-align: center;
     }
-    h1 {
-      margin-bottom: 5px;
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
     }
+
+    header p {
+      margin: 5px 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    main {
+      padding: 16px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .card span {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
     section {
       background: #ffffff;
+      border-radius: 12px;
       padding: 16px;
       margin-bottom: 16px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    section h2 {
+      margin-top: 0;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #6b7280;
+      padding: 16px;
     }
   </style>
 </head>
 <body>
 
+<header>
   <h1>Finanças da Família</h1>
-  <p>Controle financeiro mensal familiar</p>
+  <p>Controle financeiro mensal simples</p>
+</header>
+
+<main>
+
+  <div class="cards">
+    <div class="card">
+      <h3>Saldo do mês</h3>
+      <span>R$ 0,00</span>
+    </div>
+    <div class="card">
+      <h3>Receitas</h3>
+      <span>R$ 0,00</span>
+    </div>
+    <div class="card">
+      <h3>Despesas</h3>
+      <span>R$ 0,00</span>
+    </div>
+    <div class="card">
+      <h3>Economias</h3>
+      <span>R$ 0,00</span>
+    </div>
+  </div>
 
   <section>
     <h2>📊 Painel</h2>
-    <ul>
-      <li>Saldo do mês</li>
-      <li>Receitas (Adultos)</li>
-      <li>Despesas (Adultos + Crianças)</li>
-      <li>Economias</li>
-    </ul>
+    <p>Resumo geral das finanças da família no mês atual.</p>
   </section>
 
   <section>
     <h2>💳 Transações</h2>
-    <p>Registro de entradas e saídas</p>
+    <p>Aqui você vai registrar entradas e saídas do dia a dia.</p>
   </section>
 
   <section>
     <h2>🏷 Categorias</h2>
-    <p>Orçamento mensal por categoria e por pessoa</p>
+    <p>Defina limites mensais por categoria e por pessoa.</p>
   </section>
 
   <section>
     <h2>🎯 Metas</h2>
-    <p>Economizar automaticamente o que sobrar + meta fixa mensal</p>
+    <p>Acompanhe sua economia mensal e objetivos financeiros.</p>
   </section>
+
+</main>
+
+<footer>
+  Finanças da Família · uso pessoal
+</footer>
 
 </body>
 </html>
