@@ -188,7 +188,8 @@ salvar()
 function renderRelatorio(){
 let porClass={},porCat={}
 transacoes.filter(t=>t.tipo=="despesa").forEach(t=>{
-porClass[t.classificacao]=(porClass[t.classificacao]||0)+t.valor
+const classif = t.classificacao || "Família"
+porClass[classif] = (porClass[classif] || 0) + t.valor
 porCat[t.categoria]=(porCat[t.categoria]||0)+t.valor
 })
 
