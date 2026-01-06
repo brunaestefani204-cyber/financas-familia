@@ -18,9 +18,9 @@ section.active{display:block}
 input,select,button{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #ccc}
 button{background:#22c55e;color:#fff;font-weight:bold;border:none}
 button.delete{background:#dc2626}
+.small{font-size:13px;color:#666}
 .progress{background:#e5e7eb;border-radius:8px;height:10px;overflow:hidden}
 .progress div{background:#22c55e;height:100%}
-.small{font-size:13px;color:#666}
 </style>
 </head>
 
@@ -51,10 +51,8 @@ button.delete{background:#dc2626}
 
 <div class="box">
 <h3>📊 Relatório Mensal</h3>
-
 <h4>Por Classificação</h4>
 <ul id="relClass"></ul>
-
 <h4>Por Categoria</h4>
 <ul id="relCat"></ul>
 </div>
@@ -128,6 +126,20 @@ localStorage.setItem("transacoes",JSON.stringify(transacoes))
 localStorage.setItem("metas",JSON.stringify(metas))
 }
 
+/* 🔧 NORMALIZAÇÃO */
+categorias = categorias.map(c=>({
+ nome: c.nome,
+ classificacao: c.classificacao || "Família"
+}))
+
+transacoes = transacoes.map(t=>{
+ const cat = categorias.find(c=>c.nome===t.categoria)
+ return {
+   ...t,
+   classificacao: t.classificacao || (cat ? cat.classificacao : "Família")
+ }
+})
+
 function renderCategorias(){
 categoria.innerHTML = categorias.map(c=>`<option>${c.nome}</option>`).join("")
 listaCategorias.innerHTML = categorias.map(c=>`
@@ -143,8 +155,13 @@ salvar();renderCategorias()
 }
 
 function addTransacao(){
-let cat=categorias.find(c=>c.nome===categoria.value)
-transacoes.push({tipo:tipo.value,valor:+valor.value,categoria:cat.nome,classificacao:cat.classificacao})
+const cat = categorias.find(c=>c.nome===categoria.value)
+transacoes.push({
+ tipo:tipo.value,
+ valor:+valor.value,
+ categoria:cat.nome,
+ classificacao:cat.classificacao
+})
 valor.value=""
 salvar();renderTransacoes();atualizar()
 }
@@ -188,8 +205,7 @@ salvar()
 function renderRelatorio(){
 let porClass={},porCat={}
 transacoes.filter(t=>t.tipo=="despesa").forEach(t=>{
-const classif = t.classificacao || "Família"
-porClass[classif] = (porClass[classif] || 0) + t.valor
+porClass[t.classificacao]=(porClass[t.classificacao]||0)+t.valor
 porCat[t.categoria]=(porCat[t.categoria]||0)+t.valor
 })
 
