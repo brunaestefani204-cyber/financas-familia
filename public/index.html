@@ -11,20 +11,16 @@
       margin: 0;
       color: #333;
     }
-
     header {
       background: #1f2937;
       color: #fff;
       padding: 16px;
       text-align: center;
     }
-
     nav {
       display: flex;
-      justify-content: space-around;
       background: #111827;
     }
-
     nav button {
       flex: 1;
       padding: 14px;
@@ -34,56 +30,45 @@
       font-size: 14px;
       cursor: pointer;
     }
-
     nav button.active {
       color: #fff;
       border-bottom: 3px solid #22c55e;
     }
-
     main {
       padding: 16px;
       max-width: 900px;
       margin: auto;
     }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-
-    .card h3 {
-      margin: 0 0 8px;
-      font-size: 14px;
-      color: #6b7280;
-    }
-
-    .card span {
-      font-size: 20px;
-      font-weight: bold;
-    }
-
     section {
       display: none;
     }
-
     section.active {
       display: block;
     }
-
-    footer {
-      text-align: center;
-      font-size: 12px;
-      color: #6b7280;
+    .card, .box {
+      background: #fff;
+      border-radius: 12px;
       padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+    }
+    button {
+      background: #22c55e;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    ul {
+      padding-left: 16px;
     }
   </style>
 </head>
@@ -103,62 +88,112 @@
 
 <main>
 
-  <!-- PAINEL -->
   <section id="painel" class="active">
-    <div class="cards">
-      <div class="card"><h3>Saldo</h3><span id="saldo">R$ 0,00</span></div>
-      <div class="card"><h3>Receitas</h3><span id="receitas">R$ 0,00</span></div>
-      <div class="card"><h3>Despesas</h3><span id="despesas">R$ 0,00</span></div>
+    <div class="box">
+      <p><strong>Painel geral</strong></p>
+      <p>Resumo aparecerá aqui.</p>
     </div>
-    <p>Visão geral das finanças da família.</p>
   </section>
 
-  <!-- TRANSAÇÕES -->
   <section id="transacoes">
-    <h2>💳 Transações</h2>
-    <p>Aqui você vai lançar receitas e despesas.</p>
+    <div class="box">
+      <p>Transações serão cadastradas aqui.</p>
+    </div>
   </section>
 
-  <!-- METAS -->
   <section id="metas">
-    <h2>🎯 Metas</h2>
-    <p>Defina e acompanhe metas financeiras.</p>
+    <div class="box">
+      <p>Metas financeiras serão configuradas aqui.</p>
+    </div>
   </section>
 
-  <!-- CATEGORIAS -->
   <section id="categorias">
-    <h2>🏷 Categorias</h2>
-    <p>Gerencie categorias e integrantes da família.</p>
+
+    <div class="box">
+      <h3>👨‍👩‍👧‍👦 Integrantes da Família</h3>
+      <input id="novoIntegrante" placeholder="Nome do integrante">
+      <button onclick="adicionarIntegrante()">Adicionar Integrante</button>
+      <ul id="listaIntegrantes"></ul>
+    </div>
+
+    <div class="box">
+      <h3>🏷 Categorias</h3>
+      <input id="novaCategoria" placeholder="Nome da categoria">
+      <select id="tipoCategoria">
+        <option>Adultos</option>
+        <option>Crianças</option>
+        <option>Família</option>
+      </select>
+      <button onclick="adicionarCategoria()">Adicionar Categoria</button>
+      <ul id="listaCategorias"></ul>
+    </div>
+
   </section>
 
 </main>
 
-<footer>
-  Finanças da Família · uso pessoal
-</footer>
-
 <script>
-  let receitas = Number(localStorage.getItem("receitas")) || 0;
-  let despesas = Number(localStorage.getItem("despesas")) || 0;
-
-  function atualizarPainel() {
-    document.getElementById("receitas").innerText =
-      receitas.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    document.getElementById("despesas").innerText =
-      despesas.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-    document.getElementById("saldo").innerText =
-      (receitas - despesas).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  }
+  let integrantes = JSON.parse(localStorage.getItem("integrantes")) || ["Adulto 1", "Adulto 2", "Crianças"];
+  let categorias = JSON.parse(localStorage.getItem("categorias")) || [
+    { nome: "Alimentação", tipo: "Família" },
+    { nome: "Moradia", tipo: "Família" },
+    { nome: "Transporte", tipo: "Adultos" },
+    { nome: "Escola", tipo: "Crianças" }
+  ];
 
   function mostrarAba(id, botao) {
     document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
     document.getElementById(id).classList.add("active");
-
     document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
     botao.classList.add("active");
   }
 
-  atualizarPainel();
+  function salvar() {
+    localStorage.setItem("integrantes", JSON.stringify(integrantes));
+    localStorage.setItem("categorias", JSON.stringify(categorias));
+  }
+
+  function renderIntegrantes() {
+    const ul = document.getElementById("listaIntegrantes");
+    ul.innerHTML = "";
+    integrantes.forEach((i, index) => {
+      const li = document.createElement("li");
+      li.innerText = i;
+      ul.appendChild(li);
+    });
+  }
+
+  function renderCategorias() {
+    const ul = document.getElementById("listaCategorias");
+    ul.innerHTML = "";
+    categorias.forEach(c => {
+      const li = document.createElement("li");
+      li.innerText = `${c.nome} (${c.tipo})`;
+      ul.appendChild(li);
+    });
+  }
+
+  function adicionarIntegrante() {
+    const nome = document.getElementById("novoIntegrante").value.trim();
+    if (!nome) return;
+    integrantes.push(nome);
+    document.getElementById("novoIntegrante").value = "";
+    salvar();
+    renderIntegrantes();
+  }
+
+  function adicionarCategoria() {
+    const nome = document.getElementById("novaCategoria").value.trim();
+    const tipo = document.getElementById("tipoCategoria").value;
+    if (!nome) return;
+    categorias.push({ nome, tipo });
+    document.getElementById("novaCategoria").value = "";
+    salvar();
+    renderCategorias();
+  }
+
+  renderIntegrantes();
+  renderCategorias();
 </script>
 
 </body>
