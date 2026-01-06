@@ -13,12 +13,12 @@ nav button.active{color:#fff;border-bottom:3px solid #22c55e}
 main{padding:16px;max-width:900px;margin:auto}
 section{display:none}
 section.active{display:block}
-.box{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.box,.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
-.card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 input,select,button{width:100%;padding:10px;margin-top:6px;margin-bottom:10px;border-radius:8px;border:1px solid #d1d5db}
 button{background:#22c55e;color:#fff;font-weight:bold;border:none}
-.list{font-size:14px}
+.progress{background:#e5e7eb;border-radius:8px;overflow:hidden;height:10px;margin-top:6px}
+.progress div{background:#22c55e;height:100%}
 </style>
 </head>
 
@@ -26,7 +26,7 @@ button{background:#22c55e;color:#fff;font-weight:bold;border:none}
 
 <header>
 <h1>Finanças da Família</h1>
-<p>Controle financeiro mensal</p>
+<p>Controle financeiro anual</p>
 </header>
 
 <nav>
@@ -40,70 +40,47 @@ button{background:#22c55e;color:#fff;font-weight:bold;border:none}
 
 <section id="painel" class="active">
 <div class="cards">
-<div class="card"><h4>Saldo</h4><strong id="saldo">R$ 0,00</strong></div>
-<div class="card"><h4>Receitas</h4><strong id="totalReceitas">R$ 0,00</strong></div>
-<div class="card"><h4>Despesas</h4><strong id="totalDespesas">R$ 0,00</strong></div>
+<div class="card"><h4>Entradas</h4><strong id="entradas">R$ 0,00</strong></div>
+<div class="card"><h4>Despesas</h4><strong id="despesas">R$ 0,00</strong></div>
+<div class="card"><h4>Investimentos</h4><strong id="investimentos">R$ 0,00</strong></div>
+<div class="card"><h4>Metas (Ano)</h4><strong id="totalMetas">R$ 0,00</strong></div>
+<div class="card"><h4>Saldo do mês</h4><strong id="saldo">R$ 0,00</strong></div>
 </div>
 </section>
 
 <section id="transacoes">
 <div class="box">
-<h3>💳 Nova Transação</h3>
-
 <select id="tipo">
-<option value="receita">Receita</option>
+<option value="entrada">Entrada</option>
 <option value="despesa">Despesa</option>
+<option value="investimento">Investimento</option>
 </select>
-
 <input id="valor" type="number" placeholder="Valor">
-
-<select id="integrante"></select>
-<select id="categoria"></select>
-
-<button onclick="adicionarTransacao()">Adicionar</button>
-</div>
-
-<div class="box">
-<h3>📋 Lançamentos</h3>
-<ul id="listaTransacoes" class="list"></ul>
+<button onclick="addTransacao()">Adicionar</button>
 </div>
 </section>
 
 <section id="metas">
 <div class="box">
-<p>Metas serão configuradas aqui.</p>
+<h3>🎯 Nova Meta Anual</h3>
+<input id="nomeMeta" placeholder="Nome da meta">
+<input id="valorMeta" type="number" placeholder="Valor total">
+<button onclick="addMeta()">Adicionar Meta</button>
 </div>
+<div id="listaMetas"></div>
 </section>
 
 <section id="categorias">
-
 <div class="box">
-<h3>👨‍👩‍👧‍👦 Integrantes</h3>
-<input id="novoIntegrante" placeholder="Nome">
-<button onclick="addIntegrante()">Adicionar</button>
-<ul id="listaIntegrantes"></ul>
+<p>Categorias e integrantes mantidos.</p>
 </div>
-
-<div class="box">
-<h3>🏷 Categorias</h3>
-<input id="novaCategoria" placeholder="Categoria">
-<select id="tipoCategoria">
-<option>Adultos</option>
-<option>Crianças</option>
-<option>Família</option>
-</select>
-<button onclick="addCategoria()">Adicionar</button>
-<ul id="listaCategorias"></ul>
-</div>
-
 </section>
 
 </main>
 
 <script>
-let integrantes=JSON.parse(localStorage.getItem("integrantes"))||["Adulto 1","Adulto 2","Crianças"]
-let categorias=JSON.parse(localStorage.getItem("categorias"))||[{nome:"Alimentação"},{nome:"Moradia"},{nome:"Transporte"},{nome:"Escola"}]
 let transacoes=JSON.parse(localStorage.getItem("transacoes"))||[]
+let metas=JSON.parse(localStorage.getItem("metas"))||[]
 
 function mostrarAba(id,btn){
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
@@ -113,69 +90,67 @@ btn.classList.add("active")
 }
 
 function salvar(){
-localStorage.setItem("integrantes",JSON.stringify(integrantes))
-localStorage.setItem("categorias",JSON.stringify(categorias))
 localStorage.setItem("transacoes",JSON.stringify(transacoes))
+localStorage.setItem("metas",JSON.stringify(metas))
 }
 
-function renderSelects(){
-document.getElementById("integrante").innerHTML=integrantes.map(i=>`<option>${i}</option>`).join("")
-document.getElementById("categoria").innerHTML= categorias.map(c=>`<option>${c.nome||c}</option>`).join("")
-}
-
-function renderCategorias(){
-listaCategorias.innerHTML=categorias.map(c=>`<li>${c.nome||c}</li>`).join("")
-listaIntegrantes.innerHTML=integrantes.map(i=>`<li>${i}</li>`).join("")
-renderSelects()
-}
-
-function addIntegrante(){
-let n=novoIntegrante.value.trim()
-if(!n)return
-integrantes.push(n)
-novoIntegrante.value=""
-salvar();renderCategorias()
-}
-
-function addCategoria(){
-let n=novaCategoria.value.trim()
-if(!n)return
-categorias.push({nome:n})
-novaCategoria.value=""
-salvar();renderCategorias()
-}
-
-function adicionarTransacao(){
-let tipo=document.getElementById("tipo").value
-let valor=Number(document.getElementById("valor").value)
-if(!valor)return alert("Informe valor")
-transacoes.push({
-tipo,valor,
-integrante:integrante.value,
-categoria:categoria.value
-})
+function addTransacao(){
+let tipo=tipo.value
+let v=Number(valor.value)
+if(!v)return
+transacoes.push({tipo:v>0?tipo:null,valor:v})
 valor.value=""
-salvar();renderTransacoes();atualizarPainel()
+salvar();atualizar()
 }
 
-function renderTransacoes(){
-listaTransacoes.innerHTML=""
-transacoes.forEach(t=>{
-listaTransacoes.innerHTML+=`<li>${t.tipo.toUpperCase()} • ${t.integrante} • ${t.categoria} • R$ ${t.valor}</li>`
+function addMeta(){
+let nome=nomeMeta.value.trim()
+let total=Number(valorMeta.value)
+if(!nome||!total)return
+metas.push({nome,total,acumulado:0})
+nomeMeta.value="";valorMeta.value=""
+salvar();renderMetas()
+}
+
+function atualizar(){
+let e=transacoes.filter(t=>t.tipo=="entrada").reduce((a,b)=>a+b.valor,0)
+let d=transacoes.filter(t=>t.tipo=="despesa").reduce((a,b)=>a+b.valor,0)
+let i=transacoes.filter(t=>t.tipo=="investimento").reduce((a,b)=>a+b.valor,0)
+let sobra=e-d-i
+let metasMes=sobra>0?sobra:0
+
+if(metasMes>0 && metas.length){
+let m=metas.find(m=>m.acumulado<m.total)
+if(m){
+let falta=m.total-m.acumulado
+let add=Math.min(falta,metasMes)
+m.acumulado+=add
+}
+}
+
+entradas.innerText=e.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+despesas.innerText=d.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+investimentos.innerText=i.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+totalMetas.innerText=metas.reduce((a,b)=>a+b.acumulado,0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+saldo.innerText=(sobra>0?0:sobra).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+
+salvar();renderMetas()
+}
+
+function renderMetas(){
+listaMetas.innerHTML=""
+metas.forEach(m=>{
+let p=(m.acumulado/m.total)*100
+listaMetas.innerHTML+=`
+<div class="box">
+<strong>${m.nome}</strong>
+<p>${m.acumulado.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} / ${m.total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</p>
+<div class="progress"><div style="width:${p}%"></div></div>
+</div>`
 })
 }
 
-function atualizarPainel(){
-let r=transacoes.filter(t=>t.tipo=="receita").reduce((a,b)=>a+b.valor,0)
-let d=transacoes.filter(t=>t.tipo=="despesa").reduce((a,b)=>a+b.valor,0)
-totalReceitas.innerText=r.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
-totalDespesas.innerText=d.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
-saldo.innerText=(r-d).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
-}
-
-renderCategorias()
-renderTransacoes()
-atualizarPainel()
+atualizar()
 </script>
 
 </body>
