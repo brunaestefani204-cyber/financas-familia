@@ -16,8 +16,9 @@ section.active{display:block}
 .box,.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 input,select,button{width:100%;padding:10px;margin-top:6px;margin-bottom:10px;border-radius:8px;border:1px solid #d1d5db}
-button{background:#22c55e;color:#fff;font-weight:bold;border:none}
-.progress{background:#e5e7eb;border-radius:8px;overflow:hidden;height:10px;margin-top:6px}
+button{background:#22c55e;color:#fff;font-weight:bold;border:none;cursor:pointer}
+button.delete{background:#dc2626}
+.progress{background:#e5e7eb;border-radius:8px;height:10px;overflow:hidden}
 .progress div{background:#22c55e;height:100%}
 </style>
 </head>
@@ -40,11 +41,11 @@ button{background:#22c55e;color:#fff;font-weight:bold;border:none}
 
 <section id="painel" class="active">
 <div class="cards">
-<div class="card"><h4>Entradas</h4><strong id="entradas">R$ 0,00</strong></div>
-<div class="card"><h4>Despesas</h4><strong id="despesas">R$ 0,00</strong></div>
-<div class="card"><h4>Investimentos</h4><strong id="investimentos">R$ 0,00</strong></div>
-<div class="card"><h4>Metas (Ano)</h4><strong id="totalMetas">R$ 0,00</strong></div>
-<div class="card"><h4>Saldo do mês</h4><strong id="saldo">R$ 0,00</strong></div>
+<div class="card"><strong>Entradas</strong><div id="entradas">R$ 0,00</div></div>
+<div class="card"><strong>Despesas</strong><div id="despesas">R$ 0,00</div></div>
+<div class="card"><strong>Investimentos</strong><div id="investimentos">R$ 0,00</div></div>
+<div class="card"><strong>Metas (Ano)</strong><div id="totalMetas">R$ 0,00</div></div>
+<div class="card"><strong>Saldo do mês</strong><div id="saldo">R$ 0,00</div></div>
 </div>
 </section>
 
@@ -56,6 +57,7 @@ button{background:#22c55e;color:#fff;font-weight:bold;border:none}
 <option value="investimento">Investimento</option>
 </select>
 <input id="valor" type="number" placeholder="Valor">
+<select id="categoria"></select>
 <button onclick="addTransacao()">Adicionar</button>
 </div>
 </section>
@@ -72,15 +74,19 @@ button{background:#22c55e;color:#fff;font-weight:bold;border:none}
 
 <section id="categorias">
 <div class="box">
-<p>Categorias e integrantes mantidos.</p>
+<h3>🏷 Categorias</h3>
+<input id="novaCategoria" placeholder="Nome da categoria">
+<button onclick="addCategoria()">Adicionar Categoria</button>
+<ul id="listaCategorias"></ul>
 </div>
 </section>
 
 </main>
 
 <script>
-let transacoes=JSON.parse(localStorage.getItem("transacoes"))||[]
-let metas=JSON.parse(localStorage.getItem("metas"))||[]
+let categorias = JSON.parse(localStorage.getItem("categorias")) || ["Alimentação","Moradia","Transporte","Educação","Lazer"]
+let transacoes = JSON.parse(localStorage.getItem("transacoes")) || []
+let metas = JSON.parse(localStorage.getItem("metas")) || []
 
 function mostrarAba(id,btn){
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
@@ -90,47 +96,64 @@ btn.classList.add("active")
 }
 
 function salvar(){
+localStorage.setItem("categorias",JSON.stringify(categorias))
 localStorage.setItem("transacoes",JSON.stringify(transacoes))
 localStorage.setItem("metas",JSON.stringify(metas))
 }
 
+function renderCategorias(){
+categoria.innerHTML = categorias.map(c=>`<option>${c}</option>`).join("")
+listaCategorias.innerHTML = categorias.map((c,i)=>`<li>${c}</li>`).join("")
+}
+
+function addCategoria(){
+let n=novaCategoria.value.trim()
+if(!n)return
+categorias.push(n)
+novaCategoria.value=""
+salvar();renderCategorias()
+}
+
 function addTransacao(){
-let tipo=tipo.value
 let v=Number(valor.value)
 if(!v)return
-transacoes.push({tipo:v>0?tipo:null,valor:v})
+transacoes.push({tipo:tipo.value,valor:v,categoria:categoria.value})
 valor.value=""
 salvar();atualizar()
 }
 
 function addMeta(){
-let nome=nomeMeta.value.trim()
-let total=Number(valorMeta.value)
-if(!nome||!total)return
-metas.push({nome,total,acumulado:0})
+let n=nomeMeta.value.trim()
+let t=Number(valorMeta.value)
+if(!n||!t)return
+metas.push({nome:n,total:t,acumulado:0})
 nomeMeta.value="";valorMeta.value=""
 salvar();renderMetas()
+}
+
+function excluirMeta(i){
+metas.splice(i,1)
+salvar();renderMetas();atualizar()
 }
 
 function atualizar(){
 let e=transacoes.filter(t=>t.tipo=="entrada").reduce((a,b)=>a+b.valor,0)
 let d=transacoes.filter(t=>t.tipo=="despesa").reduce((a,b)=>a+b.valor,0)
-let i=transacoes.filter(t=>t.tipo=="investimento").reduce((a,b)=>a+b.valor,0)
-let sobra=e-d-i
-let metasMes=sobra>0?sobra:0
+let inv=transacoes.filter(t=>t.tipo=="investimento").reduce((a,b)=>a+b.valor,0)
+let sobra=e-d-inv
 
-if(metasMes>0 && metas.length){
+if(sobra>0){
 let m=metas.find(m=>m.acumulado<m.total)
 if(m){
 let falta=m.total-m.acumulado
-let add=Math.min(falta,metasMes)
+let add=Math.min(falta,sobra)
 m.acumulado+=add
 }
 }
 
 entradas.innerText=e.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 despesas.innerText=d.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
-investimentos.innerText=i.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+investimentos.innerText=inv.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 totalMetas.innerText=metas.reduce((a,b)=>a+b.acumulado,0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 saldo.innerText=(sobra>0?0:sobra).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 
@@ -139,17 +162,20 @@ salvar();renderMetas()
 
 function renderMetas(){
 listaMetas.innerHTML=""
-metas.forEach(m=>{
+metas.forEach((m,i)=>{
 let p=(m.acumulado/m.total)*100
 listaMetas.innerHTML+=`
 <div class="box">
 <strong>${m.nome}</strong>
 <p>${m.acumulado.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} / ${m.total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</p>
 <div class="progress"><div style="width:${p}%"></div></div>
+<button class="delete" onclick="excluirMeta(${i})">Excluir Meta</button>
 </div>`
 })
 }
 
+renderCategorias()
+renderMetas()
 atualizar()
 </script>
 
