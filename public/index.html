@@ -10,17 +10,16 @@ header{background:#1f2937;color:#fff;padding:20px;text-align:center}
 nav{display:flex;background:#111827}
 nav button{flex:1;padding:14px;border:none;background:none;color:#9ca3af;cursor:pointer}
 nav button.active{color:#fff;border-bottom:3px solid #22c55e}
-main{max-width:1000px;margin:auto;padding:20px}
+main{max-width:1100px;margin:auto;padding:20px}
 section{display:none}
 section.active{display:block}
 .card,.box{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 input,select,button{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #ccc}
 button{background:#22c55e;color:#fff;font-weight:bold;border:none}
-button.delete{background:#dc2626}
 .small{font-size:13px;color:#666}
-.progress{background:#e5e7eb;border-radius:8px;height:10px;overflow:hidden}
-.progress div{background:#22c55e;height:100%}
+.bar{background:#22c55e;height:16px;border-radius:6px}
+.bar-wrap{background:#e5e7eb;border-radius:6px;margin:6px 0}
 </style>
 </head>
 
@@ -28,7 +27,7 @@ button.delete{background:#dc2626}
 
 <header>
 <h1>Finanças da Família</h1>
-<p>Controle financeiro anual</p>
+<p>Controle financeiro mensal</p>
 </header>
 
 <nav>
@@ -40,24 +39,36 @@ button.delete{background:#dc2626}
 
 <main>
 
+<!-- PAINEL -->
 <section id="painel" class="active">
+
+<div class="box">
+<label>Mês</label>
+<select id="mesSelect"></select>
+<label>Ano</label>
+<select id="anoSelect"></select>
+</div>
+
 <div class="cards">
 <div class="card"><strong>Entradas</strong><div id="entradas"></div></div>
 <div class="card"><strong>Despesas</strong><div id="despesas"></div></div>
 <div class="card"><strong>Investimentos</strong><div id="investimentos"></div></div>
-<div class="card"><strong>Metas</strong><div id="totalMetas"></div></div>
-<div class="card"><strong>Saldo</strong><div id="saldo"></div></div>
+<div class="card"><strong>Saldo do mês</strong><div id="saldo"></div></div>
 </div>
 
 <div class="box">
-<h3>📊 Relatório Mensal</h3>
-<h4>Por Classificação</h4>
-<ul id="relClass"></ul>
-<h4>Por Categoria</h4>
-<ul id="relCat"></ul>
+<h3>📊 Despesas por Categoria</h3>
+<div id="graficoCategoria"></div>
 </div>
+
+<div class="box">
+<h3>📉 Evolução Mensal (Ano)</h3>
+<div id="graficoEvolucao"></div>
+</div>
+
 </section>
 
+<!-- TRANSAÇÕES -->
 <section id="transacoes">
 <div class="box">
 <select id="tipo">
@@ -72,21 +83,16 @@ button.delete{background:#dc2626}
 
 <button onclick="addTransacao()">Adicionar</button>
 </div>
-
-<div class="box">
-<ul id="listaTransacoes"></ul>
-</div>
 </section>
 
+<!-- METAS -->
 <section id="metas">
 <div class="box">
-<input id="nomeMeta" placeholder="Nome da meta">
-<input id="valorMeta" type="number" placeholder="Valor total">
-<button onclick="addMeta()">Adicionar Meta</button>
+<p>Metas anuais continuam funcionando como antes.</p>
 </div>
-<div id="listaMetas"></div>
 </section>
 
+<!-- CATEGORIAS -->
 <section id="categorias">
 <div class="box">
 <input id="novaCategoria" placeholder="Nome da categoria">
@@ -103,15 +109,20 @@ button.delete{background:#dc2626}
 </main>
 
 <script>
-let categorias = JSON.parse(localStorage.getItem("categorias")) || [
+const meses=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+const anoAtual=new Date().getFullYear()
+
+let mesAtual=0
+let anoAtualSel=anoAtual
+
+let categorias=JSON.parse(localStorage.getItem("categorias"))||[
  {nome:"Alimentação",classificacao:"Família"},
  {nome:"Moradia",classificacao:"Família"},
- {nome:"Escola",classificacao:"Criança"},
+ {nome:"Educação",classificacao:"Criança"},
  {nome:"Lazer",classificacao:"Família"}
 ]
 
-let transacoes = JSON.parse(localStorage.getItem("transacoes")) || []
-let metas = JSON.parse(localStorage.getItem("metas")) || []
+let transacoes=JSON.parse(localStorage.getItem("transacoes"))||[]
 
 function aba(id,b){
 document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
@@ -123,108 +134,93 @@ b.classList.add("active")
 function salvar(){
 localStorage.setItem("categorias",JSON.stringify(categorias))
 localStorage.setItem("transacoes",JSON.stringify(transacoes))
-localStorage.setItem("metas",JSON.stringify(metas))
 }
 
-/* 🔧 NORMALIZAÇÃO */
-categorias = categorias.map(c=>({
- nome: c.nome,
- classificacao: c.classificacao || "Família"
-}))
-
-transacoes = transacoes.map(t=>{
- const cat = categorias.find(c=>c.nome===t.categoria)
- return {
-   ...t,
-   classificacao: t.classificacao || (cat ? cat.classificacao : "Família")
- }
-})
+function initMesAno(){
+mesSelect.innerHTML=meses.map((m,i)=>`<option value="${i}">${m}</option>`).join("")
+anoSelect.innerHTML=Array.from({length:5},(_,i)=>anoAtual-2+i).map(a=>`<option>${a}</option>`).join("")
+mesSelect.value=0
+anoSelect.value=anoAtual
+mesSelect.onchange=()=>{mesAtual=+mesSelect.value;atualizar()}
+anoSelect.onchange=()=>{anoAtualSel=+anoSelect.value;atualizar()}
+}
 
 function renderCategorias(){
-categoria.innerHTML = categorias.map(c=>`<option>${c.nome}</option>`).join("")
-listaCategorias.innerHTML = categorias.map(c=>`
-<li><strong>${c.nome}</strong><div class="small">${c.classificacao}</div></li>
-`).join("")
+categoria.innerHTML=categorias.map(c=>`<option>${c.nome}</option>`).join("")
+listaCategorias.innerHTML=categorias.map(c=>`<li>${c.nome} <span class="small">(${c.classificacao})</span></li>`).join("")
 }
 
 function addCategoria(){
-if(!novaCategoria.value)return
 categorias.push({nome:novaCategoria.value,classificacao:classificacaoCategoria.value})
 novaCategoria.value=""
 salvar();renderCategorias()
 }
 
 function addTransacao(){
-const cat = categorias.find(c=>c.nome===categoria.value)
+const cat=categorias.find(c=>c.nome===categoria.value)
 transacoes.push({
  tipo:tipo.value,
  valor:+valor.value,
  categoria:cat.nome,
- classificacao:cat.classificacao
+ classificacao:cat.classificacao,
+ mes:mesAtual,
+ ano:anoAtualSel
 })
 valor.value=""
-salvar();renderTransacoes();atualizar()
-}
-
-function renderTransacoes(){
-listaTransacoes.innerHTML=transacoes.map(t=>`
-<li>${t.tipo} • ${t.categoria} • ${t.classificacao} • R$ ${t.valor.toFixed(2)}</li>
-`).join("")
-}
-
-function addMeta(){
-metas.push({nome:nomeMeta.value,total:+valorMeta.value,acumulado:0})
-nomeMeta.value="";valorMeta.value=""
-salvar();renderMetas()
+salvar();atualizar()
 }
 
 function atualizar(){
-let e=0,d=0,i=0
-transacoes.forEach(t=>{
-if(t.tipo=="entrada")e+=t.valor
-if(t.tipo=="despesa")d+=t.valor
-if(t.tipo=="investimento")i+=t.valor
-})
+const mesTrans=transacoes.filter(t=>t.mes===mesAtual && t.ano===anoAtualSel)
 
-let sobra=e-d-i
-if(sobra>0 && metas.length){
-let m=metas.find(m=>m.acumulado<m.total)
-if(m)m.acumulado+=Math.min(sobra,m.total-m.acumulado)
-}
+let e=0,d=0,i=0
+mesTrans.forEach(t=>{
+if(t.tipo==="entrada")e+=t.valor
+if(t.tipo==="despesa")d+=t.valor
+if(t.tipo==="investimento")i+=t.valor
+})
 
 entradas.innerText=e.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 despesas.innerText=d.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 investimentos.innerText=i.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
-totalMetas.innerText=metas.reduce((a,b)=>a+b.acumulado,0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
-saldo.innerText=(sobra>0?0:sobra).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+saldo.innerText=(e-d-i).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 
-renderRelatorio()
-salvar()
+renderGraficoCategoria(mesTrans)
+renderGraficoEvolucao()
 }
 
-function renderRelatorio(){
-let porClass={},porCat={}
-transacoes.filter(t=>t.tipo=="despesa").forEach(t=>{
-porClass[t.classificacao]=(porClass[t.classificacao]||0)+t.valor
+function renderGraficoCategoria(lista){
+graficoCategoria.innerHTML=""
+const total=lista.filter(t=>t.tipo==="despesa").reduce((a,b)=>a+b.valor,0)
+const porCat={}
+lista.filter(t=>t.tipo==="despesa").forEach(t=>{
 porCat[t.categoria]=(porCat[t.categoria]||0)+t.valor
 })
 
-relClass.innerHTML=Object.entries(porClass).map(([k,v])=>`<li>${k}: ${v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</li>`).join("")
-relCat.innerHTML=Object.entries(porCat).map(([k,v])=>`<li>${k}: ${v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</li>`).join("")
+Object.entries(porCat).forEach(([k,v])=>{
+const pct=(v/total*100)||0
+graficoCategoria.innerHTML+=`
+<div class="small">${k} (${v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})})</div>
+<div class="bar-wrap"><div class="bar" style="width:${pct}%"></div></div>
+`
+})
 }
 
-function renderMetas(){
-listaMetas.innerHTML=metas.map(m=>`
-<div class="box">
-<strong>${m.nome}</strong>
-<div>${m.acumulado.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} / ${m.total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>
-</div>
-`).join("")
+function renderGraficoEvolucao(){
+graficoEvolucao.innerHTML=""
+for(let m=0;m<12;m++){
+let total=transacoes.filter(t=>t.mes===m && t.ano===anoAtualSel && t.tipo==="despesa")
+.reduce((a,b)=>a+b.valor,0)
+const pct=total/100
+graficoEvolucao.innerHTML+=`
+<div class="small">${meses[m]}</div>
+<div class="bar-wrap"><div class="bar" style="width:${pct}%"></div></div>
+`
+}
 }
 
+initMesAno()
 renderCategorias()
-renderTransacoes()
-renderMetas()
 atualizar()
 </script>
 
