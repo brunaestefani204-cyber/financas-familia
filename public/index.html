@@ -1,35 +1,215 @@
-<!-- ADICIONE ESTE BLOCO DENTRO DA SECTION id="painel", ABAIXO DOS CARDS -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Finanças da Família</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:0;font-family:Segoe UI,Arial;background:#f2f4f7;color:#333}
+header{background:#1f2937;color:#fff;padding:20px;text-align:center}
+nav{display:flex;background:#111827}
+nav button{flex:1;padding:14px;border:none;background:none;color:#9ca3af;cursor:pointer}
+nav button.active{color:#fff;border-bottom:3px solid #22c55e}
+main{max-width:1000px;margin:auto;padding:20px}
+section{display:none}
+section.active{display:block}
+.card,.box{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+input,select,button{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #ccc}
+button{background:#22c55e;color:#fff;font-weight:bold;border:none}
+button.delete{background:#dc2626}
+.progress{background:#e5e7eb;border-radius:8px;height:10px;overflow:hidden}
+.progress div{background:#22c55e;height:100%}
+.small{font-size:13px;color:#666}
+</style>
+</head>
 
-<div class="box">
-  <h3>📊 Relatório Mensal</h3>
+<body>
 
-  <h4>Por Classificação</h4>
-  <ul id="relatorioClassificacao"></ul>
+<header>
+<h1>Finanças da Família</h1>
+<p>Controle financeiro anual</p>
+</header>
 
-  <h4>Por Categoria</h4>
-  <ul id="relatorioCategoria"></ul>
+<nav>
+<button class="active" onclick="aba('painel',this)">Painel</button>
+<button onclick="aba('transacoes',this)">Transações</button>
+<button onclick="aba('metas',this)">Metas</button>
+<button onclick="aba('categorias',this)">Categorias</button>
+</nav>
+
+<main>
+
+<section id="painel" class="active">
+<div class="cards">
+<div class="card"><strong>Entradas</strong><div id="entradas"></div></div>
+<div class="card"><strong>Despesas</strong><div id="despesas"></div></div>
+<div class="card"><strong>Investimentos</strong><div id="investimentos"></div></div>
+<div class="card"><strong>Metas</strong><div id="totalMetas"></div></div>
+<div class="card"><strong>Saldo</strong><div id="saldo"></div></div>
 </div>
 
-function renderRelatorioMensal(){
-  const resumoClass = {}
-  const resumoCat = {}
+<div class="box">
+<h3>📊 Relatório Mensal</h3>
 
-  transacoes.forEach(t=>{
-    if(t.tipo === "despesa"){
-      // classificação
-      resumoClass[t.classificacao] = (resumoClass[t.classificacao] || 0) + t.valor
-      // categoria
-      resumoCat[t.categoria] = (resumoCat[t.categoria] || 0) + t.valor
-    }
-  })
+<h4>Por Classificação</h4>
+<ul id="relClass"></ul>
 
-  relatorioClassificacao.innerHTML = Object.entries(resumoClass)
-    .map(([k,v])=>`<li><strong>${k}:</strong> ${v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</li>`)
-    .join("")
+<h4>Por Categoria</h4>
+<ul id="relCat"></ul>
+</div>
+</section>
 
-  relatorioCategoria.innerHTML = Object.entries(resumoCat)
-    .map(([k,v])=>`<li><strong>${k}:</strong> ${v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</li>`)
-    .join("")
+<section id="transacoes">
+<div class="box">
+<select id="tipo">
+<option value="entrada">Entrada</option>
+<option value="despesa">Despesa</option>
+<option value="investimento">Investimento</option>
+</select>
+
+<input id="valor" type="number" placeholder="Valor">
+
+<select id="categoria"></select>
+
+<button onclick="addTransacao()">Adicionar</button>
+</div>
+
+<div class="box">
+<ul id="listaTransacoes"></ul>
+</div>
+</section>
+
+<section id="metas">
+<div class="box">
+<input id="nomeMeta" placeholder="Nome da meta">
+<input id="valorMeta" type="number" placeholder="Valor total">
+<button onclick="addMeta()">Adicionar Meta</button>
+</div>
+<div id="listaMetas"></div>
+</section>
+
+<section id="categorias">
+<div class="box">
+<input id="novaCategoria" placeholder="Nome da categoria">
+<select id="classificacaoCategoria">
+<option>Adulto</option>
+<option>Criança</option>
+<option>Família</option>
+</select>
+<button onclick="addCategoria()">Adicionar Categoria</button>
+<ul id="listaCategorias"></ul>
+</div>
+</section>
+
+</main>
+
+<script>
+let categorias = JSON.parse(localStorage.getItem("categorias")) || [
+ {nome:"Alimentação",classificacao:"Família"},
+ {nome:"Moradia",classificacao:"Família"},
+ {nome:"Escola",classificacao:"Criança"},
+ {nome:"Lazer",classificacao:"Família"}
+]
+
+let transacoes = JSON.parse(localStorage.getItem("transacoes")) || []
+let metas = JSON.parse(localStorage.getItem("metas")) || []
+
+function aba(id,b){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"))
+document.getElementById(id).classList.add("active")
+document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"))
+b.classList.add("active")
 }
 
-renderRelatorioMensal()
+function salvar(){
+localStorage.setItem("categorias",JSON.stringify(categorias))
+localStorage.setItem("transacoes",JSON.stringify(transacoes))
+localStorage.setItem("metas",JSON.stringify(metas))
+}
+
+function renderCategorias(){
+categoria.innerHTML = categorias.map(c=>`<option>${c.nome}</option>`).join("")
+listaCategorias.innerHTML = categorias.map(c=>`
+<li><strong>${c.nome}</strong><div class="small">${c.classificacao}</div></li>
+`).join("")
+}
+
+function addCategoria(){
+if(!novaCategoria.value)return
+categorias.push({nome:novaCategoria.value,classificacao:classificacaoCategoria.value})
+novaCategoria.value=""
+salvar();renderCategorias()
+}
+
+function addTransacao(){
+let cat=categorias.find(c=>c.nome===categoria.value)
+transacoes.push({tipo:tipo.value,valor:+valor.value,categoria:cat.nome,classificacao:cat.classificacao})
+valor.value=""
+salvar();renderTransacoes();atualizar()
+}
+
+function renderTransacoes(){
+listaTransacoes.innerHTML=transacoes.map(t=>`
+<li>${t.tipo} • ${t.categoria} • ${t.classificacao} • R$ ${t.valor.toFixed(2)}</li>
+`).join("")
+}
+
+function addMeta(){
+metas.push({nome:nomeMeta.value,total:+valorMeta.value,acumulado:0})
+nomeMeta.value="";valorMeta.value=""
+salvar();renderMetas()
+}
+
+function atualizar(){
+let e=0,d=0,i=0
+transacoes.forEach(t=>{
+if(t.tipo=="entrada")e+=t.valor
+if(t.tipo=="despesa")d+=t.valor
+if(t.tipo=="investimento")i+=t.valor
+})
+
+let sobra=e-d-i
+if(sobra>0 && metas.length){
+let m=metas.find(m=>m.acumulado<m.total)
+if(m)m.acumulado+=Math.min(sobra,m.total-m.acumulado)
+}
+
+entradas.innerText=e.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+despesas.innerText=d.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+investimentos.innerText=i.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+totalMetas.innerText=metas.reduce((a,b)=>a+b.acumulado,0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+saldo.innerText=(sobra>0?0:sobra).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
+
+renderRelatorio()
+salvar()
+}
+
+function renderRelatorio(){
+let porClass={},porCat={}
+transacoes.filter(t=>t.tipo=="despesa").forEach(t=>{
+porClass[t.classificacao]=(porClass[t.classificacao]||0)+t.valor
+porCat[t.categoria]=(porCat[t.categoria]||0)+t.valor
+})
+
+relClass.innerHTML=Object.entries(porClass).map(([k,v])=>`<li>${k}: ${v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</li>`).join("")
+relCat.innerHTML=Object.entries(porCat).map(([k,v])=>`<li>${k}: ${v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</li>`).join("")
+}
+
+function renderMetas(){
+listaMetas.innerHTML=metas.map(m=>`
+<div class="box">
+<strong>${m.nome}</strong>
+<div>${m.acumulado.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} / ${m.total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</div>
+</div>
+`).join("")
+}
+
+renderCategorias()
+renderTransacoes()
+renderMetas()
+atualizar()
+</script>
+
+</body>
+</html>
