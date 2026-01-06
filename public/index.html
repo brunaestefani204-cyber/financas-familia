@@ -137,12 +137,18 @@ localStorage.setItem("metas",JSON.stringify(metas))
 
 /* CATEGORIAS */
 function renderCategorias(){
-categoria.innerHTML = categorias.map(c=>`<option value="${c.nome}">${c.nome}</option>`).join("")
-listaCategorias.innerHTML = categorias.map(c=>`
-<li>
-<strong>${c.nome}</strong>
-<div class="small">${c.classificacao}</div>
-</li>`).join("")
+  categoria.innerHTML = categorias
+    .map(c=>`<option value="${c.nome}">${c.nome}</option>`)
+    .join("")
+
+  listaCategorias.innerHTML = categorias
+    .map(c=>`
+      <li>
+        <strong>${c.nome}</strong>
+        <div class="small">${c.classificacao || "Família"}</div>
+      </li>
+    `)
+    .join("")
 }
 
 function addCategoria(){
