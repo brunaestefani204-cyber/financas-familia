@@ -9,79 +9,62 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
       background: #f2f4f7;
       margin: 0;
-      padding: 0;
       color: #333;
     }
-
     header {
       background: #1f2937;
       color: #fff;
       padding: 20px;
       text-align: center;
     }
-
-    header h1 {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    header p {
-      margin: 5px 0 0;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-
     main {
       padding: 16px;
       max-width: 900px;
       margin: auto;
     }
-
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 12px;
       margin-bottom: 20px;
     }
-
     .card {
-      background: #ffffff;
+      background: #fff;
       border-radius: 12px;
       padding: 16px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
-
     .card h3 {
       margin: 0 0 8px;
       font-size: 14px;
       color: #6b7280;
     }
-
     .card span {
       font-size: 20px;
       font-weight: bold;
     }
-
     section {
-      background: #ffffff;
+      background: #fff;
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 16px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
-
-    section h2 {
-      margin-top: 0;
-      font-size: 16px;
+    input, select, button {
+      width: 100%;
+      padding: 10px;
       margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
     }
-
-    footer {
-      text-align: center;
-      font-size: 12px;
-      color: #6b7280;
-      padding: 16px;
+    button {
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
     }
+    .receita { background: #16a34a; color: #fff; }
+    .despesa { background: #dc2626; color: #fff; }
   </style>
 </head>
 <body>
@@ -94,49 +77,72 @@
 <main>
 
   <div class="cards">
-    <div class="card">
-      <h3>Saldo do mês</h3>
-      <span>R$ 0,00</span>
-    </div>
-    <div class="card">
-      <h3>Receitas</h3>
-      <span>R$ 0,00</span>
-    </div>
-    <div class="card">
-      <h3>Despesas</h3>
-      <span>R$ 0,00</span>
-    </div>
-    <div class="card">
-      <h3>Economias</h3>
-      <span>R$ 0,00</span>
-    </div>
+    <div class="card"><h3>Saldo</h3><span id="saldo">R$ 0,00</span></div>
+    <div class="card"><h3>Receitas</h3><span id="receitas">R$ 0,00</span></div>
+    <div class="card"><h3>Despesas</h3><span id="despesas">R$ 0,00</span></div>
   </div>
 
   <section>
-    <h2>📊 Painel</h2>
-    <p>Resumo geral das finanças da família no mês atual.</p>
+    <h2>➕ Adicionar Receita</h2>
+    <input type="number" id="valorReceita" placeholder="Valor da receita">
+    <select id="pessoaReceita">
+      <option>Adulto 1</option>
+      <option>Adulto 2</option>
+    </select>
+    <button class="receita" onclick="adicionarReceita()">Adicionar Receita</button>
   </section>
 
   <section>
-    <h2>💳 Transações</h2>
-    <p>Aqui você vai registrar entradas e saídas do dia a dia.</p>
-  </section>
-
-  <section>
-    <h2>🏷 Categorias</h2>
-    <p>Defina limites mensais por categoria e por pessoa.</p>
-  </section>
-
-  <section>
-    <h2>🎯 Metas</h2>
-    <p>Acompanhe sua economia mensal e objetivos financeiros.</p>
+    <h2>➖ Adicionar Despesa</h2>
+    <input type="number" id="valorDespesa" placeholder="Valor da despesa">
+    <select id="pessoaDespesa">
+      <option>Adulto 1</option>
+      <option>Adulto 2</option>
+      <option>Crianças</option>
+    </select>
+    <select id="categoriaDespesa">
+      <option>Alimentação</option>
+      <option>Moradia</option>
+      <option>Transporte</option>
+      <option>Educação</option>
+      <option>Lazer</option>
+      <option>Outros</option>
+    </select>
+    <button class="despesa" onclick="adicionarDespesa()">Adicionar Despesa</button>
   </section>
 
 </main>
 
-<footer>
-  Finanças da Família · uso pessoal
-</footer>
+<script>
+  let receitas = Number(localStorage.getItem("receitas")) || 0;
+  let despesas = Number(localStorage.getItem("despesas")) || 0;
+
+  function atualizar() {
+    document.getElementById("receitas").innerText = receitas.toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+    document.getElementById("despesas").innerText = despesas.toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+    document.getElementById("saldo").innerText = (receitas - despesas).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+    localStorage.setItem("receitas", receitas);
+    localStorage.setItem("despesas", despesas);
+  }
+
+  function adicionarReceita() {
+    const valor = Number(document.getElementById("valorReceita").value);
+    if (!valor) return alert("Informe um valor");
+    receitas += valor;
+    document.getElementById("valorReceita").value = "";
+    atualizar();
+  }
+
+  function adicionarDespesa() {
+    const valor = Number(document.getElementById("valorDespesa").value);
+    if (!valor) return alert("Informe um valor");
+    despesas += valor;
+    document.getElementById("valorDespesa").value = "";
+    atualizar();
+  }
+
+  atualizar();
+</script>
 
 </body>
 </html>
